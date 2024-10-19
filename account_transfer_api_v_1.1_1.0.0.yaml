@@ -1,0 +1,611 @@
+swagger: '2.0'
+info:
+  title: Account_Transfer_API_V_1.1
+  x-ibm-name: account_transfer_api_v_1.1
+  version: 1.0.0
+  description: >-
+    This API identifies all the plans against which a given transaction can be
+    converted.
+x-ibm-configuration:
+  cors:
+    enabled: true
+    policy:
+      - allow-origin:
+          - https://apieu.bobfin.co.in
+  gateway: datapower-api-gateway
+  type: rest
+  phase: realized
+  enforced: true
+  testable: true
+  assembly:
+    execute:
+      - custom-logging:
+          version: 1.0.0
+          title: custom-logging
+          QMGR: DPFRAM
+          TargetQueue: LOG.QUEUE
+          logLevel: error
+          Logcontrol: enabled
+          LogPointID: OrigRequest
+      - gatewayscript:
+          version: 2.0.0
+          title: hostValidation
+          source: "var apim = require('apim');\r\nvar info = apim.getvariable('message');\r\nvar hostval = apim.getvariable('message.original.headers.Host');\r\nvar xhost = apim.getvariable('message.original.headers.X-Forwarded-Host');\r\nif(hostval ===\"apieu.bobfin.co.in\"){\r\n\tif(typeof xhost =='undefined'){\r\n\t\tsession.accept();\r\n\t\tsession.output.write(apim.getvariable('message.body'));\r\n\t\tapim.output('application/json');\r\n\t}else if (xhost ==\"apieu.bobfin.co.in\"){\r\n\t\t\tsession.accept();\r\n\t\tsession.output.write(apim.getvariable('message.body'));\r\n\t\tapim.output('application/json');\r\n\t\t}else{\r\napim.setvariable('message.headers.Origin', 'null', 'clear');\r\napim.setvariable('message.headers.X-Client-IP', 'null', 'clear');\r\napim.setvariable('message.headers.X-Archived-Client-IP', 'null', 'clear');\r\napim.setvariable('message.headers.OutURL', 'null', 'clear');\r\napim.setvariable('message.headers.Server','null','clear');\r\napim.setvariable('message.headers.Access-Control-Origin','null','clear');\r\napim.setvariable('message.headers.X-Forwarded-For', 'null', 'clear');\r\napim.setvariable('message.headers.X-Forwarded-Host', 'null', 'clear');\r\napim.setvariable('message.headers.Access-Control-Allow-Origin', 'null', 'clear');\r\napim.setvariable('message.headers.Strict-Transport-Security','max-age=31536000;includeSubDomains','set');\r\napim.setvariable('message.headers.X-XSS-Protection', '1;mode=block','set');\r\napim.setvariable('message.headers.Content-Security-Policy',\"default-src 'none'\",'set');\r\napim.setvariable('message.headers.X-Content-Type-Options',\"nosniff\",'set');\r\napim.setvariable('message.headers.X-Frame-Options',\"deny\",'set');\r\napim.setvariable('message.headers.X-Powered-By',\"null\",'clear');\r\napim.setvariable('message.headers.X-AspNet-Version',\"null\",'clear');\r\napim.setvariable('message.headers.Permissions-Policy',\"geolocation=() camera=(),microphone=()\",'set');\r\napim.setvariable('message.headers.Referrer-Policy',\"strict-origin-when-cross-origin\",'set');\r\nsession.reject(\"Request headers are Notvalid\");\r\nconsole.error('Failure:Request headers are Notvalid:'+JSON.stringify(info));\r\n\t\t}\r\n}else{\r\napim.setvariable('message.headers.Origin', 'null', 'clear');\r\napim.setvariable('message.headers.X-Client-IP', 'null', 'clear');\r\napim.setvariable('message.headers.X-Archived-Client-IP', 'null', 'clear');\r\napim.setvariable('message.headers.OutURL', 'null', 'clear');\r\napim.setvariable('message.headers.Server','null','clear');\r\napim.setvariable('message.headers.Access-Control-Origin','null','clear');\r\napim.setvariable('message.headers.X-Forwarded-For', 'null', 'clear');\r\napim.setvariable('message.headers.X-Forwarded-Host', 'null', 'clear');\r\napim.setvariable('message.headers.Access-Control-Allow-Origin', 'null', 'clear');\r\napim.setvariable('message.headers.Strict-Transport-Security','max-age=31536000;includeSubDomains','set');\r\napim.setvariable('message.headers.X-XSS-Protection', '1;mode=block','set');\r\napim.setvariable('message.headers.Content-Security-Policy',\"default-src 'none'\",'set');\r\napim.setvariable('message.headers.X-Content-Type-Options',\"nosniff\",'set');\r\napim.setvariable('message.headers.X-Frame-Options',\"deny\",'set');\r\napim.setvariable('message.headers.X-Powered-By',\"null\",'clear');\r\napim.setvariable('message.headers.X-AspNet-Version',\"null\",'clear');\r\napim.setvariable('message.headers.Permissions-Policy',\"geolocation=() camera=(),microphone=()\",'set');\r\napim.setvariable('message.headers.Referrer-Policy',\"strict-origin-when-cross-origin\",'set');\r\nsession.reject(\"Request headers are Notvalid\");\r\nconsole.error('Failure:Request headers are Notvalid:'+JSON.stringify(info));\r\n\r\n}"
+      - parse:
+          version: 2.1.0
+          title: parse
+          parse-settings-reference:
+            default: API-Custom-Parser
+      - validate:
+          version: 2.3.0
+          title: validate
+          graphql-error-policy: all
+          compile-settings: {}
+          validate-against: definition
+          definition: '#/definitions/EncryptedRequest'
+      - gatewayscript:
+          version: 2.0.0
+          title: Asymm-decrypt
+          source: "var jose = require(\"jose\");\r\nvar crypto = require('crypto');\r\nvar apim = require('apim');\r\nvar forclientidhdr = apim.getvariable('api.properties.BOB-DecKey');\r\n apim.readInputAsJSON(function (error, buffer) {\r\n    if (error)\r\n    {\r\n        // handle error\r\n        session.output.write (error.errorMessage);\r\n      } else {\r\n\t   var jweobj = jose.parse(buffer.EncryptedPayload);\r\n\t   var jwehdrsinfo = jweobj.getProtected();\r\n\t  var jwehdrsinfoparse = JSON.stringify(jwehdrsinfo);\r\n\t  console.error(jwehdrsinfo.enc+\"======\"+jwehdrsinfo.alg)\r\n\t\t if((jwehdrsinfo.enc == \"A256GCM\") && (jwehdrsinfo.alg == \"RSA-OAEP-256\")){\r\njweobj.setKey(forclientidhdr);\r\n//console.error('Decryption keyname: '+jwehdrsinfo.auth)\r\njose.createJWEDecrypter(jweobj).decrypt(function(error, plaintext) {\r\n    if (error) {\r\n         session.reject(\"Request Decryption failed: \"+error);\r\n     } else {\r\n         apim.setvariable('message.body', plaintext);\r\n         session.output.write(plaintext);\r\n   console.error('----------GWS:Notify : Decryption Completed--------');  }\r\n}); \r\n} else{\r\nsession.reject('JWE JOSE headers are invalid');\r\n}\r\n  }\r\n});"
+      - gatewayscript:
+          version: 2.0.0
+          title: HeaderInjection
+          source: "var urlopen = require('urlopen');\r\nvar apim=require('apim');\r\napim.readInputAsJSON(function (error, json) {\r\nif (error)\r\n{\r\nconsole.error(\"unable to read payload\");\r\n}\r\nelse\r\n{\r\nurlopen.open(\"local:///BOB-HeaderInjection.json\", function (error, response) {\r\n  if (error) {\r\n    session.output.write(\"openCallback error:\" + error.errorMessage+\"\\n\");\r\n  }\r\n  else {\r\n  response.readAsJSON (function (error, file) {\r\nvar request=apim.getvariable('message.headers');\r\n  function findRegexMatchObj(reqObject, regex) {\r\n  let objKeys = Object.keys(reqObject);\r\n  for(let i=0;i<objKeys.length;i++) {\r\n        if(typeof reqObject[objKeys[i]] == 'object'){\r\n      findRegexMatchObj(reqObject[objKeys[i]],regex)\r\n    }\r\n    else {\r\n       if (\r\n     reqObject[objKeys[i]].toString().toLowerCase().match(regex)\r\n    ) {\r\n      console.error(\"Found A Match\",regex,i);\r\n\t  console.error(\"match\"+objKeys[i]);\r\n  session.reject(\"Request Headers contains malformed content\");\r\n    }\r\nelse{\r\n session.output.write(json);\r\n}\r\n    }\r\n  }\r\n}\r\nfor (let i = 0; i < file.patterns.pattern.length; i++) {\r\n findRegexMatchObj(request,file.patterns.pattern[i].regex);\r\n}\r\n\r\n  });\r\n}\r\n});\r\n}});"
+      - gatewayscript:
+          version: 2.0.0
+          title: SQL Injection
+          source: "\r\nvar urlopen = require('urlopen');\r\nconsole.error('SIF:GWS:Started');\r\ncontext.message.body.readAsJSON(function(error, json) {\r\n    if (error) {\r\n        // handle error\r\n    } else {\r\n        urlopen.open(\"local:///BOB-SQLInjection.json\", function(error, response) {\r\n            if (error) {\r\n                session.output.write(\"sql-injection-filter-patterns File Not Found: \" + error.errorMessage + \"\\n\");\r\n            } else {\r\n                response.readAsJSON(function(error, file) {\r\n                    var request = json;\r\n                    console.error(\"request: \" + JSON.stringify(request));\r\n\r\n                    function test() {\r\n                        for (let i = 0; i < file.patterns.pattern.length; i++) {\r\n                            findRegexMatchObj(request, file.patterns.pattern[i].regex);\r\n                        }\r\n                    }\r\n\r\n                    function findRegexMatchObj(reqObject, regex) {\r\n                        let objKeys = Object.keys(reqObject);\r\n                        for (let i = 0; i < objKeys.length; i++) {\r\n                            // console.log(\"obj key\",objKeys[i])\r\n                            if (reqObject[objKeys[i]] && typeof reqObject[objKeys[i]] == 'object') {\r\n                                findRegexMatchObj(reqObject[objKeys[i]], regex)\r\n                            } else {\r\n                                // console.log(request[objectKeys[j]],file.patterns.pattern[i].regex);\r\n\r\n                                if (\r\n                                    reqObject[objKeys[i]] && reqObject[objKeys[i]].toString().toLowerCase().match(regex)\r\n                                ) {\r\n                                    console.error(\"SIF:GWS:pattern Match:\" + regex + \" at request:\" + reqObject[objKeys[i]]);\r\n                                    session.reject(\"Request contains malformed content\");\r\n                                } else {\r\n                                    session.output.write(json);\r\n                                    //console.error('SIF:GWS:Completed');\r\n                                }\r\n                            }\r\n                        }\r\n                    }\r\n                    test();\r\nconsole.error('SIF:GWS:Completed');\r\n\r\n                });\r\n            }\r\n        });\r\n    }\r\n});"
+      - parse:
+          version: 2.1.0
+          title: parse
+          parse-settings-reference:
+            default: apic-default-parsesettings
+      - gatewayscript:
+          version: 2.0.0
+          title: Pre-Validation Processing
+          source: "var apim = require('apim');\r\napim.readInputAsJSON(function(error, json) {\r\n    if (error) {\r\n        session.output.write('Input does not read properly');\r\n        apim.output('aplication/text');\r\n    } else {\r\n        try{\r\n        if ((JSON.stringify(json).includes('accountTransfer'))&&(JSON.stringify(json.accountTransfer).includes('fromAccountNo'))&&(json.accountTransfer.fromAccountNo != '')&&(json.accountTransfer.fromAccountNo != null)) {\r\n            context.set('Account', 'E');\r\n            console.error('ValidationPoint: accountNo Validated');\r\n        } else  if ((JSON.stringify(json).includes('accountTransfer'))&&(JSON.stringify(json.accountTransfer).includes('cardLast4Dig'))&&(json.accountTransfer.cardLast4Dig != '')&&(JSON.stringify(json.accountTransfer).includes('mobileNo'))&&(json.accountTransfer.mobileNo != '')) {\r\n            context.set('Account', 'N');\r\n            console.error('ValidationPoint: CardNo Validated');\r\n        }\r\n        else{\r\n             session.reject('Request Pre-processing Failed. please check accountTransfer Object , fromAccountNo or cardLast4Dig/mobileNo');\r\n        }}\r\n        catch (error){\r\n            session.reject('Request Pre-processing Failed. please check accountTransfer Object , fromAccountNo or cardLast4Dig/mobileNo');\r\n        }\r\n    }\r\n    session.output.write(json);\r\n    apim.output('aplication/json');\r\n});"
+      - parse:
+          version: 2.1.0
+          title: parse
+          parse-settings-reference:
+            default: apic-default-parsesettings
+      - switch:
+          version: 2.0.0
+          title: switch
+          case:
+            - condition: (Account = 'E')
+              execute:
+                - validate:
+                    version: 2.6.0
+                    title: validate
+                    graphql-error-policy: all
+                    compile-settings: {}
+                    validate-against: definition
+                    definition: '#/definitions/AcTransferWithAcno'
+            - condition: (Account = 'N')
+              execute:
+                - validate:
+                    version: 2.6.0
+                    title: validate
+                    graphql-error-policy: all
+                    compile-settings: {}
+                    validate-against: definition
+                    definition: '#/definitions/AcTransferWithcardlast4dig'
+      - set-variable:
+          version: 2.0.0
+          title: set target-url
+          actions:
+            - set: OutURL
+              value: $(AccountTransfer-url)
+              type: string
+      - custom-logging:
+          version: 1.0.0
+          title: custom-logging
+          QMGR: DPFRAM
+          TargetQueue: LOG.QUEUE
+          logLevel: error
+          Logcontrol: enabled
+          LogPointID: BackendRequest
+      - invoke:
+          title: invoke
+          version: 2.0.0
+          verb: POST
+          target-url: $(AccountTransfer-url)
+          follow-redirects: false
+          timeout: 60
+          parameter-control:
+            type: blocklist
+            values: []
+          header-control:
+            type: blocklist
+            values: []
+          inject-proxy-headers: true
+          persistent-connection: true
+          stop-on-error:
+            - ConnectionError
+      - custom-logging:
+          version: 1.0.0
+          title: custom-logging
+          QMGR: DPFRAM
+          TargetQueue: LOG.QUEUE
+          logLevel: error
+          Logcontrol: enabled
+          LogPointID: BackendResponse
+      - set-variable:
+          version: 2.0.0
+          title: set-variable
+          actions:
+            - set: BOBClientCertificate
+              value: $(client.org.name)_$(client.app.name)
+              type: string
+      - gatewayscript:
+          version: 2.0.0
+          title: asymm-encrypt
+          source: "var apim = require('apim');\r\nvar jose = require(\"jose\");\r\nvar crypto = require('crypto');\r\n var a=context.get('client.org.name')\r\n  var b=context.get('client.app.name')\r\n  console.error(\"=======>\"+a+b)\r\n var bobkey = apim.getvariable('BOBClientCertificate');\r\napim.readInputAsBuffer(function (error, payload) {\r\n  if (error) {\r\n    session.reject('Failed to Read Backend Response: '+error);\r\n  } else {\r\nvar plainText = payload.toString();\r\nvar jweHdr = jose.createJWEHeader('A256GCM');\r\n   jweHdr.setProtected('alg', 'RSA-OAEP-256');\r\n \r\n   jweHdr.setKey(bobkey);\r\n  \r\n   jose.createJWEEncrypter(jweHdr).update(plainText).encrypt('compact', function(error, jweCompactObj) {\r\n      if (error) {\r\n          session.reject('Backend Response Encryption Failed: '+error);\r\n          return;\r\n        } else {\r\n    var responseconstruction = {\"EncryptedPayload\": jweCompactObj};\r\nsession.output.write(responseconstruction);\r\napim.output('application/json');\r\nconsole.info(\"Response Encryption completed: \"+responseconstruction);\r\n}\r\n});\r\n}});"
+      - log:
+          version: 2.1.0
+          title: log
+          log-level: default
+          mode: gather-and-send
+      - gatewayscript:
+          version: 2.0.0
+          title: headerSuppression
+          source: "var apim = require('apim');\r\napim.setvariable('message.headers.Origin', 'null', 'clear');\r\napim.setvariable('message.headers.X-Client-IP', 'null', 'clear');\r\napim.setvariable('message.headers.X-Archived-Client-IP', 'null', 'clear');\r\napim.setvariable('message.headers.OutURL', 'null', 'clear');\r\napim.setvariable('message.headers.Server','null','clear');\r\napim.setvariable('message.headers.Access-Control-Origin','null','clear');\r\napim.setvariable('message.headers.X-Forwarded-For', 'null', 'clear');\r\napim.setvariable('message.headers.X-Forwarded-Host', 'null', 'clear');\r\napim.setvariable('message.headers.Access-Control-Allow-Origin', 'null', 'clear');\r\napim.setvariable('message.headers.Strict-Transport-Security','max-age=31536000; includeSubDomains; preload','set');\r\napim.setvariable('message.headers.X-XSS-Protection', '1;mode=block','set');\r\napim.setvariable('message.headers.Content-Security-Policy',\"default-src 'none'\",'set');\r\napim.setvariable('message.headers.X-Content-Type-Options',\"nosniff\",'set');\r\napim.setvariable('message.headers.X-Frame-Options',\"deny\",'set');\r\napim.setvariable('message.headers.X-Powered-By',\"null\",'clear');\r\napim.setvariable('message.headers.X-AspNet-Version',\"null\",'clear');\r\napim.setvariable('message.headers.Permissions-Policy',\"geolocation=() camera=(),microphone=()\",'set');\r\napim.setvariable('message.headers.Referrer-Policy',\"strict-origin-when-cross-origin\",'set');"
+      - custom-logging:
+          version: 1.0.0
+          title: custom-logging
+          QMGR: DPFRAM
+          TargetQueue: LOG.QUEUE
+          logLevel: error
+          Logcontrol: enabled
+          LogPointID: FinalResponse
+    catch:
+      - errors:
+          - ValidateError
+        execute:
+          - gatewayscript:
+              version: 2.0.0
+              title: processError
+              source: "var apim = require('apim');\r\nvar error = apim.getError().name;\r\nvar message = 'Invalid Request Recieved';\r\nvar additionalinfo = apim.getError().message;\r\nvar httpCode = apim.getError().status.code;\r\nvar reasonCode = apim.getError().status.reason;\r\nvar errorResponse ={\r\n\terror,\r\n\tmessage,\r\n\tadditionalinfo,\r\n\thttpCode,\r\n\treasonCode\t\r\n};\r\napim.setvariable('message.status.code', httpCode);\r\napim.setvariable('message.status.reason', reasonCode);\r\napim.setvariable('message.body', errorResponse);"
+          - custom-logging:
+              version: 1.0.0
+              title: custom-logging
+              QMGR: DPFRAM
+              TargetQueue: LOG.QUEUE
+              logLevel: error
+              Logcontrol: enabled
+              LogPointID: ErrorResponse
+          - set-variable:
+              version: 2.0.0
+              title: set-variable
+              actions:
+                - set: BOBClientCertificate
+                  value: $(client.org.name)_$(client.app.name)
+                  type: string
+          - gatewayscript:
+              version: 2.0.0
+              title: asymm-encrypt
+              source: "var apim = require('apim');\r\nvar jose = require(\"jose\");\r\nvar crypto = require('crypto');\r\n var bobkey = apim.getvariable('BOBClientCertificate');\r\napim.readInputAsBuffer(function (error, payload) {\r\n  if (error) {\r\n    session.reject('Failed to Read Backend Response: '+error);\r\n  } else {\r\nvar plainText = payload.toString();\r\nvar jweHdr = jose.createJWEHeader('A256GCM');\r\n   jweHdr.setProtected('alg', 'RSA-OAEP-256');\r\n \r\n   jweHdr.setKey(bobkey);\r\n  \r\n   jose.createJWEEncrypter(jweHdr).update(plainText).encrypt('compact', function(error, jweCompactObj) {\r\n      if (error) {\r\n          session.reject('Backend Response Encryption Failed: '+error);\r\n          return;\r\n        } else {\r\n    var responseconstruction = {\"EncryptedPayload\": jweCompactObj};\r\nsession.output.write(responseconstruction);\r\napim.output('application/json');\r\nconsole.info(\"Response Encryption completed: \"+responseconstruction);\r\n}\r\n});\r\n}});"
+          - log:
+              version: 2.1.0
+              title: log
+              log-level: default
+              mode: gather-and-send
+          - gatewayscript:
+              version: 2.0.0
+              title: headerSuppression
+              source: "var apim = require('apim');\r\napim.setvariable('message.headers.Origin', 'null', 'clear');\r\napim.setvariable('message.headers.X-Client-IP', 'null', 'clear');\r\napim.setvariable('message.headers.X-Archived-Client-IP', 'null', 'clear');\r\napim.setvariable('message.headers.OutURL', 'null', 'clear');\r\napim.setvariable('message.headers.Server','null','clear');\r\napim.setvariable('message.headers.Access-Control-Origin','null','clear');\r\napim.setvariable('message.headers.X-Forwarded-For', 'null', 'clear');\r\napim.setvariable('message.headers.X-Forwarded-Host', 'null', 'clear');\r\napim.setvariable('message.headers.Access-Control-Allow-Origin', 'null', 'clear');\r\napim.setvariable('message.headers.Strict-Transport-Security','max-age=31536000; includeSubDomains; preload','set');\r\napim.setvariable('message.headers.X-XSS-Protection', '1;mode=block','set');\r\napim.setvariable('message.headers.Content-Security-Policy',\"default-src 'none'\",'set');\r\napim.setvariable('message.headers.X-Content-Type-Options',\"nosniff\",'set');\r\napim.setvariable('message.headers.X-Frame-Options',\"deny\",'set');\r\napim.setvariable('message.headers.X-Powered-By',\"null\",'clear');\r\napim.setvariable('message.headers.X-AspNet-Version',\"null\",'clear');\r\napim.setvariable('message.headers.Permissions-Policy',\"geolocation=() camera=(),microphone=()\",'set');\r\napim.setvariable('message.headers.Referrer-Policy',\"strict-origin-when-cross-origin\",'set');"
+      - default:
+          - gatewayscript:
+              version: 2.0.0
+              title: processError
+              source: "var apim = require('apim');\r\nvar error = apim.getError().name;\r\nvar message = apim.getError().message;\r\nvar httpCode = apim.getError().status.code;\r\nvar reasonCode = apim.getError().status.reason;\r\nvar errorResponse ={\r\n\terror,\r\n\tmessage,\r\n\thttpCode,\r\n\treasonCode\t\r\n};\r\napim.setvariable('message.status.code', httpCode);\r\napim.setvariable('message.status.reason', reasonCode);\r\napim.setvariable('message.body', errorResponse);"
+          - custom-logging:
+              version: 1.0.0
+              title: custom-logging
+              QMGR: DPFRAM
+              TargetQueue: LOG.QUEUE
+              logLevel: error
+              Logcontrol: enabled
+              LogPointID: ErrorResponse
+          - set-variable:
+              version: 2.0.0
+              title: set-variable
+              actions:
+                - set: BOBClientCertificate
+                  value: $(client.org.name)_$(client.app.name)
+                  type: string
+          - gatewayscript:
+              version: 2.0.0
+              title: asymm-encrypt
+              source: "var apim = require('apim');\r\nvar jose = require(\"jose\");\r\nvar crypto = require('crypto');\r\n var bobkey = apim.getvariable('BOBClientCertificate');\r\napim.readInputAsBuffer(function (error, payload) {\r\n  if (error) {\r\n    session.reject('Failed to Read Backend Response: '+error);\r\n  } else {\r\nvar plainText = payload.toString();\r\nvar jweHdr = jose.createJWEHeader('A256GCM');\r\n   jweHdr.setProtected('alg', 'RSA-OAEP-256');\r\n \r\n   jweHdr.setKey(bobkey);\r\n  \r\n   jose.createJWEEncrypter(jweHdr).update(plainText).encrypt('compact', function(error, jweCompactObj) {\r\n      if (error) {\r\n          session.reject('Backend Response Encryption Failed: '+error);\r\n          return;\r\n        } else {\r\n    var responseconstruction = {\"EncryptedPayload\": jweCompactObj};\r\nsession.output.write(responseconstruction);\r\napim.output('application/json');\r\nconsole.info(\"Response Encryption completed: \"+responseconstruction);\r\n}\r\n});\r\n}});"
+          - log:
+              version: 2.1.0
+              title: log
+              log-level: default
+              mode: gather-and-send
+          - gatewayscript:
+              version: 2.0.0
+              title: headerSuppression
+              source: "var apim = require('apim');\r\napim.setvariable('message.headers.Origin', 'null', 'clear');\r\napim.setvariable('message.headers.X-Client-IP', 'null', 'clear');\r\napim.setvariable('message.headers.X-Archived-Client-IP', 'null', 'clear');\r\napim.setvariable('message.headers.OutURL', 'null', 'clear');\r\napim.setvariable('message.headers.Server','null','clear');\r\napim.setvariable('message.headers.Access-Control-Origin','null','clear');\r\napim.setvariable('message.headers.X-Forwarded-For', 'null', 'clear');\r\napim.setvariable('message.headers.X-Forwarded-Host', 'null', 'clear');\r\napim.setvariable('message.headers.Access-Control-Allow-Origin', 'null', 'clear');\r\napim.setvariable('message.headers.Strict-Transport-Security','max-age=31536000; includeSubDomains; preload','set');\r\napim.setvariable('message.headers.X-XSS-Protection', '1;mode=block','set');\r\napim.setvariable('message.headers.Content-Security-Policy',\"default-src 'none'\",'set');\r\napim.setvariable('message.headers.X-Content-Type-Options',\"nosniff\",'set');\r\napim.setvariable('message.headers.X-Frame-Options',\"deny\",'set');\r\napim.setvariable('message.headers.X-Powered-By',\"null\",'clear');\r\napim.setvariable('message.headers.X-AspNet-Version',\"null\",'clear');\r\napim.setvariable('message.headers.Permissions-Policy',\"geolocation=() camera=(),microphone=()\",'set');\r\napim.setvariable('message.headers.Referrer-Policy',\"strict-origin-when-cross-origin\",'set');"
+    finally: []
+  properties:
+    AccountTransfer-url:
+      description: The URL of the target service
+      encoded: false
+      value: http://10.22.9.41:7803/bfsl/apic/account-transfer
+    BOB-DecKey:
+      value: BOBPRIVATE
+  activity-log:
+    enabled: true
+    success-content: payload
+    error-content: payload
+    preserved-request-header: []
+  buffering: true
+  categories: []
+basePath: /
+paths:
+  /v1/account_transfer:
+    post:
+      responses:
+        '200':
+          description: success
+          schema:
+            type: string
+      consumes: []
+      produces: []
+      parameters:
+        - name: Req_Body
+          required: true
+          in: body
+          schema:
+            $ref: '#/definitions/EncryptedRequest'
+securityDefinitions:
+  BOB-Client-ID:
+    type: apiKey
+    x-key-type: client_id
+    name: BOB-Client-Id
+    in: header
+  BOB-Client-Secret:
+    type: apiKey
+    x-key-type: client_secret
+    name: BOB-Client-Secret
+    in: header
+  OAuth:
+    type: oauth2
+    x-ibm-oauth-provider: accounttransfer
+    flow: application
+    tokenUrl: https://$(catalog.url)/accounttransfer/oauth2/token
+    scopes:
+      accounttransfer_api: AccountTransfer_API
+schemes:
+  - https
+definitions:
+  EncryptedRequest:
+    type: object
+    properties:
+      EncryptedPayload:
+        type: string
+    example: '{"EncryptedPayload":""}'
+    required:
+      - EncryptedPayload
+  AcTransferWithAcno:
+    type: object
+    properties:
+      header:
+        type: object
+        properties:
+          channel:
+            type: string
+            minLength: 1
+            maxLength: 10
+            pattern: ^[A-Z]+$
+        required:
+          - channel
+        minProperties: 1
+        maxProperties: 1
+        additionalProperties: false
+      accountTransfer:
+        type: object
+        properties:
+          mode:
+            type: string
+          function:
+            type: string
+            minLength: 1
+            maxLength: 1
+            pattern: ^[C|P|R|S|T]+$
+          fromAccountNo:
+            type: string
+            minLength: 19
+            maxLength: 19
+            pattern: ^[0-9]+$
+          newAccountLogo:
+            type: string
+          newAccountNo:
+            type: string
+          newCustNo:
+            type: string
+          cycle:
+            type: string
+            minLength: 2
+            maxLength: 2
+            pattern: ^[00|01-31]+$
+          effectiveDate:
+            type: string
+          authDays:
+            type: string
+          promotion:
+            type: string
+          replacementIndicator:
+            type: string
+          newCardTechnology:
+            type: string
+          pct:
+            type: string
+          pctOverride:
+            type: string
+          pctLevelOverride:
+            type: string
+          pctOverrideDMC:
+            type: string
+          pctOverrideDMCNo:
+            type: string
+          pctOverrideExpiryDate:
+            type: string
+          pctLevelOverrideDMC:
+            type: string
+          pctLevelOverrideDMCNo:
+            type: string
+          pctLevelOverrideExpiryDate:
+            type: string
+          creditLimit:
+            type: string
+          reIssueCardScheme:
+            type: string
+          cardHolderGroup:
+            type: object
+            properties:
+              cardLogo:
+                type: string
+              cardLogoIssue:
+                type: string
+              sdpProcessType:
+                type: string
+              altCardCarrier:
+                type: string
+              batchData:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    oldCardNo:
+                      type: string
+                    newCardNo:
+                      type: string
+                    programId:
+                      type: string
+                    expiryDate:
+                      type: string
+          retainPin:
+            type: string
+          nonMSAltCardCarrier:
+            type: string
+          traidCheck:
+            type: string
+          refundAnnFee:
+            type: string
+          insuranceProduct:
+            type: object
+            properties:
+              insProduct1:
+                type: string
+              insProduct2:
+                type: string
+              insProduct3:
+                type: string
+              insProduct4:
+                type: string
+              insProduct5:
+                type: string
+          expireRetailBTPromotion:
+            type: string
+          defaultCash:
+            type: string
+          defaultRetail:
+            type: string
+          defaultPromo:
+            type: string
+          accountControlOverride:
+            type: string
+          svcFeeTbl:
+            type: string
+          svcFeeTblExpire:
+            type: string
+          emblem:
+            type: string
+          offerCode:
+            type: string
+          defaultLoyaltyCD:
+            type: string
+          newAccountCampaignCode:
+            type: string
+          defaultMTPlanNo:
+            type: string
+          mtOfferCode:
+            type: string
+        required:
+          - function
+          - cycle
+          - fromAccountNo
+    required:
+      - header
+      - accountTransfer
+    minProperties: 2
+    maxProperties: 2
+    additionalProperties: false
+    example: >-
+      {"header":{"channel":"<Channel Name provided by
+      BFSL>"},"accountTransfer":{"mode":"","function":"P","fromAccountNo":"0007930340010009710","newAccountLogo":"033","newAccountNo":"","newCustNo":"","cycle":"2","effectiveDate":"0","authDays":"0","promotion":"","replacementIndicator":"","newCardTechnology":"","pct":"","pctOverride":"","pctLevelOverride":"","pctOverrideDMC":"","pctOverrideDMCNo":"0","pctOverrideExpiryDate":"0","pctLevelOverrideDMC":"","pctLevelOverrideDMCNo":"0","pctLevelOverrideExpiryDate":"0","creditLimit":"0","reIssueCardScheme":"","cardHolderGroup":{"cardLogo":"0","cardLogoIssue":"0","sdpProcessType":"0","altCardCarrier":"","batchData":[{"oldCardNo":"","newCardNo":"","programId":"","expiryDate":"0"}]},"retainPin":"0","nonMSAltCardCarrier":"","traidCheck":"","refundAnnFee":"","insuranceProduct":{"insProduct1":"","insProduct2":"","insProduct3":"","insProduct4":"","insProduct5":""},"expireRetailBTPromotion":"","defaultCash":"0","defaultRetail":"0","defaultPromo":"0","accountControlOverride":"0","svcFeeTbl":"0","svcFeeTblExpire":"0","emblem":"0","offerCode":"","defaultLoyaltyCD":"0","newAccountCampaignCode":"","defaultMTPlanNo":"0","mtOfferCode":""}}
+  AcTransferWithcardlast4dig:
+    type: object
+    properties:
+      header:
+        type: object
+        properties:
+          channel:
+            type: string
+      accountTransfer:
+        type: object
+        properties:
+          mode:
+            type: string
+          function:
+            type: string
+            minLength: 1
+            maxLength: 1
+            pattern: ^[C|P|R|S|T]+$
+          cardLast4Dig:
+            type: string
+            minLength: 4
+            maxLength: 4
+            pattern: ^[0-9]+$
+          mobileNo:
+            type: string
+            minLength: 10
+            maxLength: 10
+            pattern: ^[0-9]+$
+          newAccountLogo:
+            type: string
+          newAccountNo:
+            type: string
+          newCustNo:
+            type: string
+          cycle:
+            type: string
+            minLength: 2
+            maxLength: 2
+            pattern: ^[00|01-31]+$
+          effectiveDate:
+            type: string
+          authDays:
+            type: string
+          promotion:
+            type: string
+          replacementIndicator:
+            type: string
+          newCardTechnology:
+            type: string
+          pct:
+            type: string
+          pctOverride:
+            type: string
+          pctLevelOverride:
+            type: string
+          pctOverrideDMC:
+            type: string
+          pctOverrideDMCNo:
+            type: string
+          pctOverrideExpiryDate:
+            type: string
+          pctLevelOverrideDMC:
+            type: string
+          pctLevelOverrideDMCNo:
+            type: string
+          pctLevelOverrideExpiryDate:
+            type: string
+          creditLimit:
+            type: string
+          reIssueCardScheme:
+            type: string
+          cardHolderGroup:
+            type: object
+            properties:
+              cardLogo:
+                type: string
+              cardLogoIssue:
+                type: string
+              sdpProcessType:
+                type: string
+              altCardCarrier:
+                type: string
+              batchData:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    oldCardNo:
+                      type: string
+                    newCardNo:
+                      type: string
+                    programId:
+                      type: string
+                    expiryDate:
+                      type: string
+          retainPin:
+            type: string
+          nonMSAltCardCarrier:
+            type: string
+          traidCheck:
+            type: string
+          refundAnnFee:
+            type: string
+          insuranceProduct:
+            type: object
+            properties:
+              insProduct1:
+                type: string
+              insProduct2:
+                type: string
+              insProduct3:
+                type: string
+              insProduct4:
+                type: string
+              insProduct5:
+                type: string
+          expireRetailBTPromotion:
+            type: string
+          defaultCash:
+            type: string
+          defaultRetail:
+            type: string
+          defaultPromo:
+            type: string
+          accountControlOverride:
+            type: string
+          svcFeeTbl:
+            type: string
+          svcFeeTblExpire:
+            type: string
+          emblem:
+            type: string
+          offerCode:
+            type: string
+          defaultLoyaltyCD:
+            type: string
+          newAccountCampaignCode:
+            type: string
+          defaultMTPlanNo:
+            type: string
+          mtOfferCode:
+            type: string
+        required:
+          - function
+          - cycle
+          - cardLast4Dig
+          - mobileNo
+    required:
+      - header
+      - accountTransfer
+    example: >-
+      {"header":{"channel":"<Channel Name provided by
+      BFSL>"},"accountTransfer":{"mode":"","function":"P","cardLast4Dig":"1298","mobileNo":"9773451234","newAccountLogo":"033","newAccountNo":"","newCustNo":"","cycle":"2","effectiveDate":"0","authDays":"0","promotion":"","replacementIndicator":"","newCardTechnology":"","pct":"","pctOverride":"","pctLevelOverride":"","pctOverrideDMC":"","pctOverrideDMCNo":"0","pctOverrideExpiryDate":"0","pctLevelOverrideDMC":"","pctLevelOverrideDMCNo":"0","pctLevelOverrideExpiryDate":"0","creditLimit":"0","reIssueCardScheme":"","cardHolderGroup":{"cardLogo":"0","cardLogoIssue":"0","sdpProcessType":"0","altCardCarrier":"","batchData":[{"oldCardNo":"","newCardNo":"","programId":"","expiryDate":"0"}]},"retainPin":"0","nonMSAltCardCarrier":"","traidCheck":"","refundAnnFee":"","insuranceProduct":{"insProduct1":"","insProduct2":"","insProduct3":"","insProduct4":"","insProduct5":""},"expireRetailBTPromotion":"","defaultCash":"0","defaultRetail":"0","defaultPromo":"0","accountControlOverride":"0","svcFeeTbl":"0","svcFeeTblExpire":"0","emblem":"0","offerCode":"","defaultLoyaltyCD":"0","newAccountCampaignCode":"","defaultMTPlanNo":"0","mtOfferCode":""}}
+consumes:
+  - application/json
+produces:
+  - application/json
+security:
+  - BOB-Client-ID: []
+    BOB-Client-Secret: []
+    OAuth:
+      - accounttransfer_api
