@@ -1,0 +1,53 @@
+type: 'catalog_setting'
+api_version: '2.0.0'
+name: 'catalog-setting'
+user_registry_default_url: 'https://platformapi.demo.com/api/catalogs/f02fca82-8c1d-4571-afaa-4e98c3a9fba2/4c3ec59f-29e2-430f-8330-b6dc76694e64/configured-catalog-user-registries/3b9fb3db-c7f0-4bbe-a8a2-78d1e6cb0037'
+production_mode: false
+portal:
+  type: 'drupal'
+  state: 'ready'
+  endpoint: 'https://apic.demo.com'
+  webhook_url: 'https://platformapi.demo.com/api/catalogs/f02fca82-8c1d-4571-afaa-4e98c3a9fba2/4c3ec59f-29e2-430f-8330-b6dc76694e64/webhooks/5cba3d11-4e61-49ac-a3c5-3148dc216da2'
+  service_version: '10.0.6.0-20230602-1043'
+  portal_service_url: 'https://platformapi.demo.com/api/orgs/f02fca82-8c1d-4571-afaa-4e98c3a9fba2/portal-services/e1aca654-f993-4aa4-89e1-b9defeb631a4'
+product_lifecycle_approvals: []
+task_self_approval: false
+allowed_product_visibility:
+  view:
+    type: 'public'
+    enabled: false
+  subscribe:
+    type: 'authenticated'
+    enabled: false
+application_lifecycle:
+  enabled: false
+consumer_self_service_onboarding: true
+consumer_self_service_onboarding_approval: false
+consumer_org_invitations_enabled: true
+consumer_org_invitation_roles:
+  - 'administrator'
+  - 'developer'
+  - 'viewer'
+invitation_ttl: 172800
+vanity_api_endpoint:
+  enabled: false
+  vanity_api_base_endpoints: []
+spaces_enabled: false
+custom_notification_templates_enabled: false
+email_sender:
+  custom: false
+hash_client_secret: false
+default_catalog: false
+product_publish_validations:
+  - 'emptyPathCheck_catalogScope'
+  - 'customPolicySchema_validation'
+  - 'enhancedOAIValidation_catalogScope'
+override_invitation_ttl_for_all_consumer_orgs: false
+gateway_supported_protocols:
+  - 'https'
+  - 'wss'
+created_at: '2024-07-09T13:46:55.000Z'
+updated_at: '2024-10-21T06:59:05.000Z'
+org_url: 'https://platformapi.demo.com/api/orgs/f02fca82-8c1d-4571-afaa-4e98c3a9fba2'
+catalog_url: 'https://platformapi.demo.com/api/catalogs/f02fca82-8c1d-4571-afaa-4e98c3a9fba2/4c3ec59f-29e2-430f-8330-b6dc76694e64'
+url: 'https://platformapi.demo.com/api/catalogs/f02fca82-8c1d-4571-afaa-4e98c3a9fba2/4c3ec59f-29e2-430f-8330-b6dc76694e64/settings'
